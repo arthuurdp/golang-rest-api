@@ -1,9 +1,10 @@
 package user
 
 import (
-	"Hello_World/myapp/pkg/apperror"
-	"Hello_World/myapp/internal/domain/repositories"
 	"Hello_World/myapp/internal/domain/entities"
+	"Hello_World/myapp/internal/domain/repositories"
+	"Hello_World/myapp/pkg/apperror"
+	"fmt"
 
 	"context"
 
@@ -38,7 +39,7 @@ func (uc *CreateUserUseCase) Execute(ctx context.Context, req CreateUserRequest)
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return apperror.NewInternalServerError("Failed to hash password: %v", err)
+		return nil, apperror.NewInternalServerError(fmt.Sprintf("Failed to hash password: %v", err))
 	}
 
 	user, err := entities.NewUser(req.Name, req.Email, string(hash)) 
@@ -47,7 +48,7 @@ func (uc *CreateUserUseCase) Execute(ctx context.Context, req CreateUserRequest)
 	}
 
 	if err := uc.userRepo.Create(ctx, user); err != nil {
-		return nil, apperror.NewInternalServerError("User couldn't be created: %w", err)
+		return nil, apperror.NewInternalServerError(fmt.Sprintf("User couldn't be created: %v", err))
 	}
 
 	return &CreateUserResponse{

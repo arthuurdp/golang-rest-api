@@ -1,0 +1,21 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: go-rest-api
+    environment:
+      MYSQL_ROOT_PASSWORD: arthur0702
+      MYSQL_DATABASE: go_api
+      MYSQL_PASSWORD: arthur0702
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      
+volumes:
+  mysql_data:

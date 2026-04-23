@@ -1,0 +1,39 @@
+# environment
+.env
+.env.local
+.env.*.local
+
+# binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+myapp
+
+# build output
+/bin/
+/dist/
+*.out
+
+# dependency cache
+/vendor/
+
+# test cache and coverage
+*.test
+*.coverprofile
+coverage.out
+coverage.html
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# docker
+docker-compose.override.yml
