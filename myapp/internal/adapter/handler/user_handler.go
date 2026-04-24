@@ -3,20 +3,18 @@ package handler
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"errors"
 	userusecase "Hello_World/myapp/internal/usecases/user"
 	"Hello_World/myapp/pkg/apperror"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type UserHandler struct {
 	createUser *userusecase.CreateUserUseCase
+	updateUser *userusecase.UpdateUserUseCase
 	getUser    *userusecase.GetUserUseCase
-}
-
-func NewUserHandler(create *userusecase.CreateUserUseCase, get *userusecase.GetUserUseCase) *UserHandler {
-	return &UserHandler{createUser: create, getUser: get}
+	getUsers   *userusecase.GetUsersUseCase
 }
 
 type createUserRequest struct {
@@ -25,11 +23,21 @@ type createUserRequest struct {
 	Password string `json:"password" binding:"required,min=8"`
 }
 
+type updateUserRequest struct {
+	Name     string `json:"name" binding:"omitempty,min=2,max=100"`
+	Email    string `json:"email" binding:"omitempty,email"`
+	Password string `json:"password" binding:"omitempty,min=8"`
+}
+
+func NewUserHandler(create *userusecase.CreateUserUseCase, update *userusecase.UpdateUserUseCase, get *userusecase.GetUserUseCase, getAll *userusecase.GetUsersUseCase) *UserHandler {
+	return &UserHandler{createUser: create, updateUser: update, getUser: get, getUsers: getAll}
+}
+
 func (h *UserHandler) Create(c *gin.Context) {
 	var req createUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		apperror.HandleError(c, err)
 		return
 	}
 
@@ -40,35 +48,60 @@ func (h *UserHandler) Create(c *gin.Context) {
 	})
 	
 	if err != nil {
-		handleError(c, err)
+		apperror.HandleError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusCreated, output)
 }
 
-func (h *UserHandler) GetById(c *gin.Context) {
+func (h *UserHandler) Update(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
+		apperror.HandleError(c, apperror.NewValidationError("invalid id"))
 		return
 	}
 
-	output, err := h.getUser.Execute(c.Request.Context(), id)
+	var req updateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apperror.HandleError(c, err)
+	}
+
+	output, err := h.updateUser.Execute(c.Request.Context(), id, userusecase.UpdateUserRequest{
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
+	})
 	if err != nil {
-		handleError(c, err)
+		apperror.HandleError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, output)
 }
 
-func handleError(c *gin.Context, err error) {
-	var appErr *apperror.AppError
-	if errors.As(err, &appErr) {
-		c.JSON(appErr.StatusCode(), appErr)
+func (h *UserHandler) FindById(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperror.HandleError(c, apperror.NewValidationError("invalid id"))
 		return
 	}
 
-	c.JSON(http.StatusInternalServerError, apperror.NewInternalServerError("erro interno do servidor"))
+	output, err := h.getUser.Execute(c.Request.Context(), id)
+	if err != nil {
+		apperror.HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
+}
+
+func (h *UserHandler) FindAll(c *gin.Context) {
+	output, err := h.getUsers.Execute(c.Request.Context())
+	if err != nil {
+		apperror.HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, output)
 }

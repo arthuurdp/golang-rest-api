@@ -30,10 +30,12 @@ func main() {
 
 	userRepo := adapterrepo.NewMySQLUserRepository(db)
 
-	createUserUC := userusecase.NewCreateUserUseCase(userRepo)
-	getUserUC    := userusecase.NewGetUserUseCase(userRepo)
+	createUserUC  := userusecase.NewCreateUserUseCase(userRepo)
+	updateUsersUC := userusecase.NewUpdateUserUseCase(userRepo)
+	getUserUC     := userusecase.NewGetUserUseCase(userRepo)
+	getUsersUC    := userusecase.NewGetUsersUseCase(userRepo)
 
-	userHandler := handler.NewUserHandler(createUserUC, getUserUC)
+	userHandler := handler.NewUserHandler(createUserUC, updateUsersUC, getUserUC, getUsersUC)
 
 	srv := server.NewServer(userHandler)
 	srv.Setup()
