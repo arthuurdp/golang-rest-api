@@ -32,10 +32,12 @@ func main() {
 
 	createUserUC  := userusecase.NewCreateUserUseCase(userRepo)
 	updateUsersUC := userusecase.NewUpdateUserUseCase(userRepo)
-	getUserUC     := userusecase.NewGetUserUseCase(userRepo)
+	changePasswordUC := userusecase.NewChangePasswordUseCase(userRepo)
+	deleteUserUC  := userusecase.NewDeleteUserUseCase(userRepo) 
+	getUserUC     := userusecase.NewGetUserUseCase(userRepo)	
 	getUsersUC    := userusecase.NewGetUsersUseCase(userRepo)
 
-	userHandler := handler.NewUserHandler(createUserUC, updateUsersUC, getUserUC, getUsersUC)
+	userHandler := handler.NewUserHandler(createUserUC, updateUsersUC, changePasswordUC, deleteUserUC, getUserUC, getUsersUC)
 
 	srv := server.NewServer(userHandler)
 	srv.Setup()

@@ -33,12 +33,11 @@ func (r *MySQLUserRepository) Create(ctx context.Context, user *entities.User) e
 }
 
 func (r *MySQLUserRepository) Update(ctx context.Context, user *entities.User) error {
-	query := `UPDATE users SET name = ?, email = ?, password = ?, updated_at = ? WHERE id = ?`
+	query := `UPDATE users SET name = ?, email = ?, updated_at = ? WHERE id = ?`
 
 	result, err := r.db.ExecContext(ctx, query,
 		user.Name,
 		user.Email,
-		user.Password,
 		user.UpdatedAt,
 		user.ID.String(),
 	)
@@ -57,10 +56,43 @@ func (r *MySQLUserRepository) Update(ctx context.Context, user *entities.User) e
 	return nil
 }
 
+func (r *MySQLUserRepository) ChangePassword(ctx context.Context, id uuid.UUID, newPassword string) error {
+	query := `UPDATE users SET password = ? WHERE id = ?`
+
+	result, err := r.db.ExecContext(ctx, query, newPassword, id.String())
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return apperror.NewResourceNotFoundError("user not found")
+	}
+
+	return nil
+}
+
 func (r *MySQLUserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM users WHERE id = ?`
-	_, err := r.db.ExecContext(ctx, query, id.String())
-	return err
+	result, err := r.db.ExecContext(ctx, query, id.String())
+	if err != nil{
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return apperror.NewResourceNotFoundError("user not found")
+	}
+
+	return nil
 }
 
 func (r *MySQLUserRepository) FindAll(ctx context.Context) ([]*entities.User, error) {

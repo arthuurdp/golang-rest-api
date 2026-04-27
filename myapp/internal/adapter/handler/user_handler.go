@@ -13,6 +13,8 @@ import (
 type UserHandler struct {
 	createUser *userusecase.CreateUserUseCase
 	updateUser *userusecase.UpdateUserUseCase
+	changePassword *userusecase.ChangePasswordUseCase
+	deleteUser *userusecase.DeleteUserUseCase
 	getUser    *userusecase.GetUserUseCase
 	getUsers   *userusecase.GetUsersUseCase
 }
@@ -26,11 +28,14 @@ type createUserRequest struct {
 type updateUserRequest struct {
 	Name     string `json:"name" binding:"omitempty,min=2,max=100"`
 	Email    string `json:"email" binding:"omitempty,email"`
-	Password string `json:"password" binding:"omitempty,min=8"`
 }
 
-func NewUserHandler(create *userusecase.CreateUserUseCase, update *userusecase.UpdateUserUseCase, get *userusecase.GetUserUseCase, getAll *userusecase.GetUsersUseCase) *UserHandler {
-	return &UserHandler{createUser: create, updateUser: update, getUser: get, getUsers: getAll}
+type changePasswordRequest struct {
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+func NewUserHandler(create *userusecase.CreateUserUseCase, update *userusecase.UpdateUserUseCase, changePassword *userusecase.ChangePasswordUseCase, delete *userusecase.DeleteUserUseCase, get *userusecase.GetUserUseCase, getAll *userusecase.GetUsersUseCase) *UserHandler {
+	return &UserHandler{createUser: create, updateUser: update, changePassword: changePassword, deleteUser: delete, getUser: get, getUsers: getAll}
 }
 
 func (h *UserHandler) Create(c *gin.Context) {
@@ -65,12 +70,12 @@ func (h *UserHandler) Update(c *gin.Context) {
 	var req updateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		apperror.HandleError(c, err)
+		return
 	}
 
 	output, err := h.updateUser.Execute(c.Request.Context(), id, userusecase.UpdateUserRequest{
 		Name:     req.Name,
 		Email:    req.Email,
-		Password: req.Password,
 	})
 	if err != nil {
 		apperror.HandleError(c, err)
@@ -78,6 +83,44 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, output)
+}
+
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperror.HandleError(c, apperror.NewValidationError("invalid id"))
+		return
+	}
+
+	var req changePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apperror.HandleError(c, err)
+		return
+	}
+
+	if err := h.changePassword.Execute(c.Request.Context(), id, userusecase.ChangePasswordRequest{
+		Password: req.Password,
+	}); err != nil {
+		apperror.HandleError(c, err)
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
+}
+
+func (h *UserHandler) Delete(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperror.HandleError(c, apperror.NewValidationError("invalid id"))
+		return
+	}
+
+	if err := h.deleteUser.Execute(c.Request.Context(), id); err != nil {
+		apperror.HandleError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 func (h *UserHandler) FindById(c *gin.Context) {

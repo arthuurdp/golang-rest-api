@@ -12,7 +12,6 @@ import (
 type UpdateUserRequest struct {
 	Name     string 
 	Email    string 
-	Password string 
 }
 
 type UpdateUserResponse struct {
@@ -36,9 +35,14 @@ func (uc *UpdateUserUseCase) Execute(ctx context.Context, id uuid.UUID, req Upda
 		return nil, err
 	}
 
-	user.Name = req.Name
-	user.Email = req.Email
-	user.Password = req.Password
+	if req.Name != "" {
+		user.Name = req.Name
+	}
+
+	if req.Email != "" {  
+		user.Email = req.Email 
+	}
+
 	user.UpdatedAt = time.Now()
 
 	if err := uc.userRepo.Update(ctx, user); err != nil {

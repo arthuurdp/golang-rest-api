@@ -32,7 +32,8 @@ func (s *Server) Setup() {
 			users.GET("/:id", s.userHandler.FindById)
 			users.POST("", s.userHandler.Create)
 			users.PATCH("/:id", s.userHandler.Update)
-			
+			users.PATCH("/:id/change-password", s.userHandler.ChangePassword)
+			users.DELETE("/:id", s.userHandler.Delete)
 		}
 	}
 }
