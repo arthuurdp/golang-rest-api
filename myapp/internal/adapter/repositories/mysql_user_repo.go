@@ -122,6 +122,10 @@ func (r *MySQLUserRepository) FindAll(ctx context.Context) ([]*entities.User, er
 		users = append(users, &user)
 	}
 
+	if err := rows.Err(); err != nil {
+			return nil, err
+		}	
+
 	return users, nil
 }
 
@@ -172,7 +176,7 @@ func (r *MySQLUserRepository) FindByEmail(ctx context.Context, email string) (*e
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	} 
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 

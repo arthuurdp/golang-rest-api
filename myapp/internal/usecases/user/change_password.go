@@ -6,10 +6,11 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type ChangePasswordRequest struct {
-	Password string `json:"password" binding:"required,min=6"`
+	Password string 
 }
 
 type ChangePasswordUseCase struct {
@@ -23,12 +24,18 @@ func NewChangePasswordUseCase(userRepo repositories.UserRepository) *ChangePassw
 func (uc *ChangePasswordUseCase) Execute(ctx context.Context, id uuid.UUID, req ChangePasswordRequest) error {
 	user, err := uc.userRepo.FindById(ctx, id)
 	if err != nil {
-		return apperror.NewResourceNotFoundError("user not found")
+		return err
 	}
 
-	if req.Password == user.Password {
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+	if err == nil {
 		return apperror.NewConflictError("new password can't be the same as the current one")
 	}
 
-	return uc.userRepo.ChangePassword(ctx, id, req.Password)
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return apperror.NewInternalServerError("error hashing password")
+	} 
+
+	return uc.userRepo.ChangePassword(ctx, id, string(hash))
 } 

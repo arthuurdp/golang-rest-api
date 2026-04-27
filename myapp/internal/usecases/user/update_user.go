@@ -35,12 +35,24 @@ func (uc *UpdateUserUseCase) Execute(ctx context.Context, id uuid.UUID, req Upda
 		return nil, err
 	}
 
-	if req.Name != "" {
-		user.Name = req.Name
+	if req.Name == "" && req.Email == "" {
+		return nil, apperror.NewValidationError("at least one field must be provided")
 	}
 
-	if req.Email != "" {  
-		user.Email = req.Email 
+	if req.Email != "" {
+		existingUser, err := uc.userRepo.FindByEmail(ctx, req.Email)
+		if err != nil {
+			return nil, err
+		}
+		if existingUser != nil && existingUser.Email == req.Email {
+			return nil, apperror.NewConflictError("email already in use")
+		} 
+		
+		user.Email = req.Email
+	}
+
+	if req.Name != "" {
+		user.Name = req.Name
 	}
 
 	user.UpdatedAt = time.Now()
